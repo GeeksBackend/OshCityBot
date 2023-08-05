@@ -5,7 +5,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from dotenv import load_dotenv
 import os, time, logging
 
-from keyboards import start_button, verify_button
+from keyboards import start_button, verify_button, admin_button
 from database import cursor
 
 load_dotenv('.env')
@@ -35,7 +35,7 @@ async def get_my_id(message:types.Message):
 
 @dp.message_handler(commands='mailing')
 async def get_mailing_text(message:types.Message):
-    if message.from_user.id in [731982105, 234234234]:
+    if message.chat.id in [731982105, 234234234]:
         await message.reply("Введите текст для рассылки")
         await MailingState.text.set()
     else:
@@ -67,7 +67,7 @@ class SightsState(StatesGroup):
 
 @dp.message_handler(commands='add_sights')
 async def get_sights_title(message:types.Message):
-    if message.from_user.id in [731982105]:
+    if message.chat.id in [731982105]:
         await message.answer("Введите заголовок")
         await SightsState.title.set()
     else:
@@ -145,6 +145,22 @@ async def get_sigths_title_user(message:types.Message, state:FSMContext):
 @dp.message_handler(text="Верификация")
 async def verify(message:types.Message):
     await message.answer("Пройдите верификацию аккаунта", reply_markup=verify_button)
+
+@dp.message_handler(commands='admin')
+async def admin_panel(message:types.Message):
+    await message.answer("Добро пожаловать в админ панель!", reply_markup=admin_button)
+
+@dp.callback_query_handler(lambda call: call)
+async def get_callback_data(call):
+    if call.data == 'add_admin_sights':
+        print(call.message)
+        await get_sights_title(call.message)
+    elif call.data == 'make_newsletter':
+        await get_mailing_text(call.message)
+
+@dp.message_handler(content_types=types.ContentType.CONTACT)
+async def get_user_phone(message:types.Message):
+    await message.answer(f"{message.contact.phone_number}")
 
 @dp.message_handler(text="Назад")
 async def back_start(message:types.Message):
